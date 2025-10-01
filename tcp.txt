@@ -1,0 +1,4 @@
+new connection &{{1100000000000000000010011110000010000000}}
+read: hi
+read: 
+read: hi
