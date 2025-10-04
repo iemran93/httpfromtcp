@@ -1,0 +1,6 @@
+new connection &{{1100000000000000000010011110000010000000}}
+read: GET /coffee HTTP/1.1
+read: Host: localhost:42069
+read: User-Agent: curl/8.5.0
+read: Accept: */*
+read: 

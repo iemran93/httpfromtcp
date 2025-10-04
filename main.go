@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// the io READET and WRITER interface work with any type of data stream(files, network)
 func getLinesChannel(c io.ReadCloser) <-chan string {
 	strs := make(chan string)
 	go func() {

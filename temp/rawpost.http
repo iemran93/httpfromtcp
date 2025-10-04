@@ -1,0 +1,10 @@
+new connection &{{1100000000000000000010011110000010000000}}
+read: POST /coffee HTTP/1.1
+read: Host: localhost:42069
+read: User-Agent: curl/8.5.0
+read: Accept: */*
+read: Contetn-Type:application/json
+read: Content-Length: 22
+read: Content-Type: application/x-www-form-urlencoded
+read: 
+read: {"flavor":"dark mode"}
