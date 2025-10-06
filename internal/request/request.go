@@ -47,19 +47,25 @@ func (r *Request) parse(data []byte) (int, error) {
 func RequestFromReader(r io.Reader) (*Request, error) {
 	request := Request{ParserState: ParserInit, RequestLine: RequestLine{}}
 
-	buffer := make([]byte, 8)
+	buffer := make([]byte, 1024)
+	buffer_len := 0
 	for request.ParserState != ParserDone {
 		// instead of appending bytes to buffer
 		// if bytes consumed shift to that index
-		byte_read, err := r.Read(buffer)
+		byte_read, err := r.Read(buffer[buffer_len:])
 		if err != nil {
 			return nil, err
 		}
 
-		byte_parse, err := request.parse()
+		buffer_len += byte_read
+
+		byte_parse, err := request.parse(buffer[:buffer_len])
 		if err != nil {
 			return nil, err
 		}
+
+		copy(buffer, buffer[byte_parse:buffer_len])
+		buffer_len -= byte_parse
 	}
 
 	return &request, nil
