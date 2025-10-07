@@ -48,7 +48,7 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 	request := Request{ParserState: ParserInit, RequestLine: RequestLine{}}
 
 	bufferSize := 8
-	buf := make([]byte, bufferSize, bufferSize)
+	buf := make([]byte, bufferSize)
 	readToIndx := 0
 	for request.ParserState != ParserDone {
 		// instead of appending bytes to buffer
@@ -57,7 +57,7 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		// if buffer full extend it
 		if readToIndx == cap(buf) {
 			bufferSize *= 2
-			newBuf := make([]byte, bufferSize, bufferSize)
+			newBuf := make([]byte, bufferSize)
 			copy(newBuf, buf)
 			buf = newBuf
 		}
