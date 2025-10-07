@@ -63,10 +63,11 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		}
 
 		byte_read, err := r.Read(buf[readToIndx:])
-		if err == io.EOF {
-			request.ParserState = ParserDone
-			break
-		} else if err != nil {
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				request.ParserState = ParserDone
+				break
+			}
 			return nil, err
 		}
 
