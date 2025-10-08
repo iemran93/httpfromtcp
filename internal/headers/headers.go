@@ -2,6 +2,7 @@ package headers
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -62,7 +63,12 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		if err != nil {
 			return 0, false, err
 		}
-		h[key] = value
+		if v, ok := h[key]; ok {
+			newV := fmt.Sprintf("%v, %v", v, value)
+			h[key] = newV
+		} else {
+			h[key] = value
+		}
 		bc += idx + 2
 	}
 }
