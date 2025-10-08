@@ -3,11 +3,13 @@ package request
 import (
 	"errors"
 	"io"
+	"learnhttp/internal/headers"
 	"strings"
 )
 
 type Request struct {
 	RequestLine RequestLine
+	Headers     headers.Headers
 	ParserState ParserState
 }
 
@@ -22,30 +24,53 @@ type ParserState int
 const (
 	ParserInit ParserState = iota
 	ParserDone
+	ParsingHeaders
 )
 
 func (r *Request) parse(data []byte) (int, error) {
-	switch r.ParserState {
-	case ParserInit:
-		rl, bc, err := parseRequestLine(data)
-		if err != nil {
-			return 0, err
-		} else if bc == 0 {
-			// zero bytes consumed; need more data
-			return 0, nil
+	totalByteConsumed := 0
+Outer:
+	for {
+		switch r.ParserState {
+		case ParserInit:
+			// parse request line
+			rl, bc, err := parseRequestLine(data[totalByteConsumed:])
+			if err != nil {
+				return 0, err
+			} else if bc == 0 {
+				// zero bytes consumed; need more data
+				break Outer
+			}
+			r.RequestLine = *rl
+			r.ParserState = ParsingHeaders
+			totalByteConsumed += bc
+		case ParsingHeaders:
+			// parse headers
+			n, done, err := r.Headers.Parse(data[totalByteConsumed:])
+			if err != nil {
+				return 0, err
+			} else if n == 0 {
+				// need more data
+				break Outer
+			} else if done {
+				r.ParserState = ParserDone
+				return n, nil
+			}
+			totalByteConsumed += n
+		case ParserDone:
+			return 0, errors.New("error: trying to read data in a done state")
+		default:
+			return 0, errors.New("error: unknown state")
 		}
-		r.RequestLine = *rl
-		r.ParserState = ParserDone
-		return bc, nil
-	case ParserDone:
-		return 0, errors.New("error: trying to read data in a done state")
-	default:
-		return 0, errors.New("error: unknown state")
 	}
+	return totalByteConsumed, nil
 }
 
 func RequestFromReader(r io.Reader) (*Request, error) {
-	request := Request{ParserState: ParserInit, RequestLine: RequestLine{}}
+	request := Request{ParserState: ParserInit,
+		Headers:     headers.NewHeaders(),
+		RequestLine: RequestLine{},
+	}
 
 	bufferSize := 8
 	buf := make([]byte, bufferSize)
@@ -126,5 +151,5 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 		}
 	}
 
-	return &requestLine, rlb, nil
+	return &requestLine, rlb + 2, nil
 }

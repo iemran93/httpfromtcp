@@ -49,26 +49,27 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	bc := 0
 	for {
 		idx := strings.Index(d[bc:], "\r\n")
-		if idx == -1 {
+		switch idx {
+		case -1:
 			// not enough data
-			return 0, false, nil
-		} else if idx == 0 {
+			return bc, false, nil
+		case 0:
 			// start of line; finished reading headers
 			return bc, true, nil
+		default:
+			// field line
+			fl := strings.TrimSpace(d[bc : bc+idx])
+			key, value, err := getKeyValue(fl)
+			if err != nil {
+				return 0, false, err
+			}
+			if v, ok := h[key]; ok {
+				newV := fmt.Sprintf("%v, %v", v, value)
+				h[key] = newV
+			} else {
+				h[key] = value
+			}
+			bc += idx + 2
 		}
-
-		// field line
-		fl := strings.TrimSpace(d[bc : bc+idx])
-		key, value, err := getKeyValue(fl)
-		if err != nil {
-			return 0, false, err
-		}
-		if v, ok := h[key]; ok {
-			newV := fmt.Sprintf("%v, %v", v, value)
-			h[key] = newV
-		} else {
-			h[key] = value
-		}
-		bc += idx + 2
 	}
 }
