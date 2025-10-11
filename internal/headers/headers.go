@@ -73,3 +73,11 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		}
 	}
 }
+
+func (h Headers) Get(key string) (string, bool) {
+	key = strings.ToLower(key)
+	if v, ok := h[key]; ok {
+		return v, true
+	}
+	return "", false
+}

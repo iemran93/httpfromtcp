@@ -4,12 +4,14 @@ import (
 	"errors"
 	"io"
 	"learnhttp/internal/headers"
+	"strconv"
 	"strings"
 )
 
 type Request struct {
 	RequestLine RequestLine
 	Headers     headers.Headers
+	Body        []byte
 	ParserState ParserState
 }
 
@@ -25,6 +27,7 @@ const (
 	ParserInit ParserState = iota
 	ParserDone
 	ParsingHeaders
+	ParsingBody
 )
 
 func (r *Request) parse(data []byte) (int, error) {
@@ -49,14 +52,38 @@ Outer:
 			n, done, err := r.Headers.Parse(data[totalByteConsumed:])
 			if err != nil {
 				return 0, err
-			} else if n == 0 {
-				// need more data
-				break Outer
-			} else if done {
-				r.ParserState = ParserDone
-				return n, nil
 			}
 			totalByteConsumed += n
+			if done {
+				r.ParserState = ParsingBody
+				// the end of headers \r\n
+				totalByteConsumed += 2
+				break Outer
+			}
+
+			if n == 0 {
+				// need more data
+				break Outer
+			}
+		case ParsingBody:
+			// parse body
+			contLengthS, exist := r.Headers.Get("content-length")
+			if !exist {
+				r.ParserState = ParserDone
+				break Outer
+			}
+			contLength, err := strconv.Atoi(contLengthS)
+			if err != nil {
+				return 0, err
+			}
+
+			remaining := min(contLength-len(r.Body), len(data[totalByteConsumed:]))
+			r.Body = append(r.Body, data[totalByteConsumed:totalByteConsumed+remaining]...)
+			if len(r.Body) == contLength {
+				r.ParserState = ParserDone
+			}
+			totalByteConsumed += remaining
+			break Outer
 		case ParserDone:
 			return 0, errors.New("error: trying to read data in a done state")
 		default:
@@ -67,9 +94,11 @@ Outer:
 }
 
 func RequestFromReader(r io.Reader) (*Request, error) {
-	request := Request{ParserState: ParserInit,
-		Headers:     headers.NewHeaders(),
+	request := Request{
+		ParserState: ParserInit,
 		RequestLine: RequestLine{},
+		Headers:     headers.NewHeaders(),
+		Body:        make([]byte, 0),
 	}
 
 	bufferSize := 8
@@ -90,6 +119,7 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		byte_read, err := r.Read(buf[readToIndx:])
 		if err != nil {
 			if errors.Is(err, io.EOF) {
+				// still data in buffer
 				request.ParserState = ParserDone
 				break
 			}
