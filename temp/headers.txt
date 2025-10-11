@@ -1,0 +1,30 @@
+
+Request line:
+- Method: GET
+- Target: /use-helix-for-sure
+- Version: 1.1
+Headers:
+- host: localhost:42069
+- user-agent: curl/8.5.0
+- accept: */*
+- content-type: application/json, application/json
+
+Request line:
+- Method: GET
+- Target: /use-helix-for-sure
+- Version: 1.1
+Headers:
+- content-type: application/json -H
+- host: localhost:42069
+- user-agent: curl/8.5.0
+- accept: */*
+
+Request line:
+- Method: GET
+- Target: /use-helix-for-sure
+- Version: 1.1
+Headers:
+- host: localhost:42069
+- user-agent: curl/8.5.0
+- accept: */*
+- content-type: application/json -H

@@ -31,7 +31,12 @@ Request line:
 - Method: %v
 - Target: %v
 - Version: %v
-			`, req.RequestLine.Method, req.RequestLine.RequestTarget, req.RequestLine.HttpVersion)
+Headers:
+`, req.RequestLine.Method, req.RequestLine.RequestTarget, req.RequestLine.HttpVersion)
+
+			for k, v := range req.Headers {
+				fmt.Printf("- %v: %v\n", k, v)
+			}
 
 			c.Close()
 		}(c)
