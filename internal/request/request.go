@@ -2,6 +2,7 @@ package request
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"learnhttp/internal/headers"
 	"strconv"
@@ -77,6 +78,11 @@ Outer:
 				return 0, err
 			}
 
+			if contLength == 0 {
+				r.ParserState = ParserDone
+				break Outer
+			}
+
 			remaining := min(contLength-len(r.Body), len(data[totalByteConsumed:]))
 			r.Body = append(r.Body, data[totalByteConsumed:totalByteConsumed+remaining]...)
 			if len(r.Body) == contLength {
@@ -119,8 +125,6 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		byte_read, err := r.Read(buf[readToIndx:])
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				// still data in buffer
-				request.ParserState = ParserDone
 				break
 			}
 			return nil, err
@@ -137,6 +141,17 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		readToIndx -= byte_parse
 	}
 
+	// expect more data for the body
+	if request.ParserState == ParsingBody {
+		contLengthS, exist := request.Headers.Get("content-length")
+		if exist {
+			contLength, _ := strconv.Atoi(contLengthS)
+			if len(request.Body) < contLength {
+				return nil, fmt.Errorf("incomplete body: expected %v bytes, got %v", contLength, len(request.Body))
+			}
+		}
+	}
+	request.ParserState = ParserDone
 	return &request, nil
 }
 
