@@ -38,6 +38,8 @@ Headers:
 				fmt.Printf("- %v: %v\n", k, v)
 			}
 
+			fmt.Printf("Body: %v\n", string(req.Body))
+
 			c.Close()
 		}(c)
 

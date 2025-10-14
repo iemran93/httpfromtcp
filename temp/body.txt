@@ -1,0 +1,12 @@
+
+Request line:
+- Method: POST
+- Target: /
+- Version: 1.1
+Headers:
+- host: localhost:42069
+- user-agent: curl/8.5.0
+- accept: */*
+- content-type: application/json
+- content-length: 37
+Body: {"type": "dark mode", "size": medium}
