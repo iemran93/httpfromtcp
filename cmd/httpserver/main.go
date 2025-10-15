@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"learnhttp/internal/handler"
+	"learnhttp/internal/request"
 	"learnhttp/internal/server"
 	"log"
 	"os"
@@ -11,9 +14,24 @@ import (
 
 const PORT = 42069
 
+func testHandler(w io.Writer, r *request.Request) *handler.HandlerError {
+	path := r.RequestLine.RequestTarget
+	if path == "/yourproblem" {
+		return &handler.HandlerError{
+			StatusCode: 400,
+			Message:    "Your problem is not my problem\n",
+		}
+	} else if path == "/myproblem" {
+		return &handler.HandlerError{
+			StatusCode: 500,
+			Message:    "Oops, my bad\n",
+		}
+	}
+	w.Write([]byte("All good\n"))
+	return nil
+}
 func main() {
-	// TODO: implement handler function
-	server, err := server.Serve(PORT)
+	server, err := server.Serve(PORT, testHandler)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}

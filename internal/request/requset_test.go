@@ -109,8 +109,17 @@ func TestHeaderParse(t *testing.T) {
 }
 
 func TestBodyParse(t *testing.T) {
-	// Test: Standard Body
 	reader := &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/8.5.0\r\nAccept: */*\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err := RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "", r.Headers["content-length"])
+
+	// Test: Standard Body
+	reader = &chunkReader{
 		data: "POST /submit HTTP/1.1\r\n" +
 			"Host: localhost:42069\r\n" +
 			"Content-Length: 13\r\n" +
@@ -118,7 +127,7 @@ func TestBodyParse(t *testing.T) {
 			"hello world!\n",
 		numBytesPerRead: 3,
 	}
-	r, err := RequestFromReader(reader)
+	r, err = RequestFromReader(reader)
 	require.NoError(t, err)
 	require.NotNil(t, r)
 	assert.Equal(t, "13", r.Headers["content-length"])

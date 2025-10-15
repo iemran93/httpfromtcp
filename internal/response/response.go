@@ -3,6 +3,7 @@ package response
 import (
 	"fmt"
 	"io"
+	"learnhttp/internal/handler"
 	"learnhttp/internal/headers"
 	"strconv"
 )
@@ -39,7 +40,7 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 	return h
 }
 
-func WrtieHeaders(w io.Writer, h headers.Headers) error {
+func WriteHeaders(w io.Writer, h headers.Headers) error {
 	for k, v := range h {
 		_, err := w.Write(fmt.Appendf(nil, "%v: %v\r\n", k, v))
 		if err != nil {
@@ -49,4 +50,18 @@ func WrtieHeaders(w io.Writer, h headers.Headers) error {
 	}
 	_, err := w.Write([]byte("\r\n"))
 	return err
+}
+
+func WriteError(w io.Writer, handlerError *handler.HandlerError) error {
+	contentLen := len(handlerError.Message)
+	err := WriteStatusLine(w, StatusCode(handlerError.StatusCode))
+	if err != nil {
+		return err
+	}
+
+	h := GetDefaultHeaders(contentLen)
+	WriteHeaders(w, h)
+	w.Write([]byte(handlerError.Message))
+
+	return nil
 }
