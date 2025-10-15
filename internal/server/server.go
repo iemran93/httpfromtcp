@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"learnhttp/internal/response"
 	"net"
 )
 
@@ -58,6 +59,13 @@ func (s *Server) handle(c net.Conn) {
 	// if err != nil {
 	// 	return
 	// }
-	c.Write([]byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello World!\n"))
+	// c.Write([]byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello World!\n"))
+	// c.Close()
+	err := response.WriteStatusLine(c, response.Ok)
+	if err != nil {
+		return
+	}
+	h := response.GetDefaultHeaders(0)
+	response.WrtieHeaders(c, h)
 	c.Close()
 }
