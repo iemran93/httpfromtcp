@@ -5,7 +5,6 @@ import (
 	"io"
 	"learnhttp/internal/handler"
 	"learnhttp/internal/headers"
-	"strconv"
 )
 
 type StatusCode int
@@ -32,9 +31,9 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 	return err
 }
 
-func GetDefaultHeaders(contentLen int) headers.Headers {
+func SetHeaders(headersN map[string]string) headers.Headers {
 	h := headers.NewHeaders()
-	h["Content-Length"] = strconv.Itoa(contentLen)
+	h["Content-Length"] = headersN["content-length"]
 	h["Connection"] = "close"
 	h["Content-Type"] = "text/plain"
 	return h
@@ -59,7 +58,7 @@ func WriteError(w io.Writer, handlerError *handler.HandlerError) error {
 		return err
 	}
 
-	h := GetDefaultHeaders(contentLen)
+	h := SetHeaders(contentLen)
 	WriteHeaders(w, h)
 	w.Write([]byte(handlerError.Message))
 

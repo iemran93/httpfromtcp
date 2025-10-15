@@ -81,10 +81,7 @@ func (s *Server) handle(c net.Conn) {
 	// call the handler
 	handlerError := s.Handler(&b, request)
 	if handlerError != nil { // send handler error
-		err := response.WriteError(c, handlerError)
-		if err != nil {
-			return
-		}
+		response.WriteError(c, handlerError)
 		return
 	}
 
@@ -95,15 +92,6 @@ func (s *Server) handle(c net.Conn) {
 	}
 	response.WriteHeaders(c, h)
 	c.Write(b.Bytes())
-	// c.Write([]byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nHello World!\n"))
-	// c.Close()
-	// err := response.WriteStatusLine(c, response.Ok)
-	// if err != nil {
-	// 	return
-	// }
-	// h := response.GetDefaultHeaders(0)
-	// response.WrtieHeaders(c, h)
-	// c.Close()
 }
 
 func (s *Server) Close() error {
