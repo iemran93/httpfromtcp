@@ -1,13 +1,11 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"learnhttp/internal/handler"
 	"learnhttp/internal/request"
 	"learnhttp/internal/response"
 	"net"
-	"strconv"
 )
 
 type Server struct {
@@ -71,28 +69,13 @@ func (s *Server) handle(c net.Conn) {
 		return
 	}
 
-	// handler write to here
-	var b bytes.Buffer
-	writer.Writer = &b
+	// // handler write to here
+	// var b bytes.Buffer
+	// writer.Writer = &b
 
 	// call the handler
 	writer.Headers = make(map[string]string)
-	handlerError := s.Handler(writer, request)
-	writer.Writer = c
-	if handlerError != nil { // send handler error
-		handlerError.WriteError(writer)
-		return
-	}
-
-	contenLenS := strconv.Itoa(b.Len())
-	writer.Headers["Content-Length"] = contenLenS
-	h := response.GetHeaders(writer.Headers)
-	err = writer.WriteStatusLine(response.Ok)
-	if err != nil {
-		return
-	}
-	writer.WriteHeaders(h)
-	c.Write(b.Bytes())
+	s.Handler(writer, request)
 }
 
 func (s *Server) Close() error {

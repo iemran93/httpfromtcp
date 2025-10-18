@@ -63,6 +63,36 @@ func (w *Writer) WriteBody(b []byte) (int, error) {
 	return n, nil
 }
 
+func (w *Writer) WriteChunkedBody(b []byte) (int, error) {
+	// write the chunked format
+	// hex representation of an int %x base 16
+	out := fmt.Sprintf("%x\r\n", len(b))
+	n, err := w.WriteBody([]byte(out))
+	if err != nil {
+		return 0, err
+	}
+
+	n, err = w.WriteBody(b)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err = w.WriteBody([]byte("\r\n"))
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+func (w *Writer) WriteChunckedBodyDone() (int, error) {
+	out := fmt.Sprintf("%x\r\n\r\n", 0)
+	n, err := w.WriteBody([]byte(out))
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 func GetHeaders(newHeaders map[string]string) headers.Headers {
 	h := headers.NewHeaders()
 	// deafult

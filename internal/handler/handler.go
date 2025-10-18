@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-type Handler func(w *response.Writer, r *request.Request) *HandlerError
+type Handler func(w *response.Writer, r *request.Request)
 
 type HandlerError struct {
 	StatusCode int
