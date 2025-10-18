@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"learnhttp/internal/request"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -33,7 +35,9 @@ func testHandler(w *response.Writer, r *request.Request) {
 		body = response500()
 	case strings.HasPrefix(path, "/httpbin/"):
 		h["Transfer-Encoding"] = "chunked"
+		h["Trailer"] = "X-Content-SHA256, X-Content-Length"
 		delete(h, "Content-Length")
+
 		target := path[len("/httpbin/"):]
 
 		resp, err := http.Get(fmt.Sprintf("https://httpbin.org/%s", target))
@@ -44,20 +48,29 @@ func testHandler(w *response.Writer, r *request.Request) {
 
 		w.WriteStatusLine(response.Ok)
 		w.WriteHeaders(h)
+
+		var respBody []byte
 		for {
 			buf := make([]byte, 32)
 			n, err := resp.Body.Read(buf)
 			if err != nil {
 				if err == io.EOF {
-					// done
+					// done reading all response
 					w.WriteChunckedBodyDone()
+					sum := sha256.Sum256(respBody)
+					w.WriteBody([]byte("X-Content-SHA256: "))
+					w.WriteBody(fmt.Appendf(nil, "%x", sum))
+					w.WriteBody([]byte("\r\n"))
+					w.WriteBody([]byte("X-Content-Length: "))
+					w.WriteBody([]byte(strconv.Itoa(len(respBody))))
+					w.WriteBody([]byte("\r\n\r\n"))
 					break
 				}
 				statusCode = 500
 				body = response500()
 				break
 			}
-			log.Printf("Read from bin: \n%v\n%v\n", n, string(buf))
+			respBody = append(respBody, buf[:n]...)
 			w.WriteChunkedBody(buf[:n])
 		}
 		return

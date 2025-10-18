@@ -85,7 +85,7 @@ func (w *Writer) WriteChunkedBody(b []byte) (int, error) {
 }
 
 func (w *Writer) WriteChunckedBodyDone() (int, error) {
-	out := fmt.Sprintf("%x\r\n\r\n", 0)
+	out := fmt.Sprintf("%x\r\n", 0)
 	n, err := w.WriteBody([]byte(out))
 	if err != nil {
 		return 0, err
