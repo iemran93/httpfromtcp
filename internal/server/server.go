@@ -6,8 +6,8 @@ import (
 	"learnhttp/internal/handler"
 	"learnhttp/internal/request"
 	"learnhttp/internal/response"
-	"log/slog"
 	"net"
+	"strconv"
 )
 
 type Server struct {
@@ -52,10 +52,7 @@ func (s *Server) listen() {
 			continue
 		}
 
-		go func() {
-			slog.Info("#go-con", "new con", c)
-			s.handle(c)
-		}()
+		go s.handle(c)
 	}
 }
 
@@ -63,34 +60,38 @@ func (s *Server) handle(c net.Conn) {
 	// handle each connection
 	defer c.Close()
 
+	writer := response.NewWriter(c)
 	request, err := request.RequestFromReader(c)
-	slog.Info("#handle", "request", request)
 	if err != nil {
-		response.WriteError(
-			c,
-			&handler.HandlerError{
-				StatusCode: 400,
-				Message:    err.Error(),
-			})
+		he := &handler.HandlerError{
+			StatusCode: 400,
+			Message:    err.Error(),
+		}
+		he.WriteError(writer)
 		return
 	}
 
 	// handler write to here
 	var b bytes.Buffer
+	writer.Writer = &b
 
 	// call the handler
-	handlerError := s.Handler(&b, request)
+	writer.Headers = make(map[string]string)
+	handlerError := s.Handler(writer, request)
+	writer.Writer = c
 	if handlerError != nil { // send handler error
-		response.WriteError(c, handlerError)
+		handlerError.WriteError(writer)
 		return
 	}
 
-	h := response.GetDefaultHeaders(b.Len())
-	err = response.WriteStatusLine(c, response.Ok)
+	contenLenS := strconv.Itoa(b.Len())
+	writer.Headers["Content-Length"] = contenLenS
+	h := response.GetHeaders(writer.Headers)
+	err = writer.WriteStatusLine(response.Ok)
 	if err != nil {
 		return
 	}
-	response.WriteHeaders(c, h)
+	writer.WriteHeaders(h)
 	c.Write(b.Bytes())
 }
 

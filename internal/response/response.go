@@ -3,9 +3,20 @@ package response
 import (
 	"fmt"
 	"io"
-	"learnhttp/internal/handler"
 	"learnhttp/internal/headers"
+	"maps"
 )
+
+type Writer struct {
+	Writer  io.Writer
+	Headers map[string]string
+}
+
+func NewWriter(w io.Writer) *Writer {
+	return &Writer{
+		Writer: w,
+	}
+}
 
 type StatusCode int
 
@@ -15,7 +26,7 @@ const (
 	ServerError StatusCode = 500
 )
 
-func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	// map status code to a reason phrase
 	statuseLine := fmt.Sprintf("HTTP/1.1 %v ", statusCode)
 	switch statusCode {
@@ -27,40 +38,38 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 		statuseLine += "Intenal Server Error"
 	default:
 	}
-	_, err := w.Write(fmt.Appendf(nil, "%v\r\n", statuseLine))
+	_, err := w.Writer.Write(fmt.Appendf(nil, "%v\r\n", statuseLine))
 	return err
 }
 
-func SetHeaders(headersN map[string]string) headers.Headers {
-	h := headers.NewHeaders()
-	h["Content-Length"] = headersN["content-length"]
-	h["Connection"] = "close"
-	h["Content-Type"] = "text/plain"
-	return h
-}
-
-func WriteHeaders(w io.Writer, h headers.Headers) error {
+func (w *Writer) WriteHeaders(h headers.Headers) error {
 	for k, v := range h {
-		_, err := w.Write(fmt.Appendf(nil, "%v: %v\r\n", k, v))
+		_, err := w.Writer.Write(fmt.Appendf(nil, "%v: %v\r\n", k, v))
 		if err != nil {
 			return err
 		}
 
 	}
-	_, err := w.Write([]byte("\r\n"))
+	_, err := w.Writer.Write([]byte("\r\n"))
 	return err
 }
 
-func WriteError(w io.Writer, handlerError *handler.HandlerError) error {
-	contentLen := len(handlerError.Message)
-	err := WriteStatusLine(w, StatusCode(handlerError.StatusCode))
+func (w *Writer) WriteBody(b []byte) (int, error) {
+	n, err := w.Writer.Write(b)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	h := SetHeaders(contentLen)
-	WriteHeaders(w, h)
-	w.Write([]byte(handlerError.Message))
+	return n, nil
+}
 
-	return nil
+func GetHeaders(newHeaders map[string]string) headers.Headers {
+	h := headers.NewHeaders()
+	// deafult
+	h["Content-Length"] = "0"
+	h["Connection"] = "close"
+	h["Content-Type"] = "text/plain"
+
+	maps.Copy(h, newHeaders)
+	return h
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"learnhttp/internal/headers"
-	"log/slog"
 	"strconv"
 	"strings"
 )
@@ -73,11 +72,9 @@ Outer:
 			}
 		case ParsingBody:
 			// parse body
-			slog.Info("#parsing-body", "header", r.Headers)
 			contLengthS, exist := r.Headers.Get("content-length")
 			if !exist {
 				r.ParserState = ParserDone
-				slog.Info("#parsing-body", "done", r.ParserState)
 				break Outer
 			}
 			contLength, err := strconv.Atoi(contLengthS)
@@ -118,7 +115,6 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 	buf := make([]byte, bufferSize)
 	readToIndx := 0
 	for request.ParserState != ParserDone {
-		slog.Info("#request-parser", "state", request.ParserState, "request", request)
 		// instead of appending bytes to buffer
 		// if bytes consumed shift to that index
 
@@ -160,7 +156,6 @@ func RequestFromReader(r io.Reader) (*Request, error) {
 		}
 	}
 	request.ParserState = ParserDone
-	slog.Info("#request-parser", "done parsing", request)
 	return &request, nil
 }
 

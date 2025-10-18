@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"learnhttp/internal/handler"
 	"learnhttp/internal/request"
+	"learnhttp/internal/response"
 	"learnhttp/internal/server"
 	"log"
 	"os"
@@ -14,20 +14,57 @@ import (
 
 const PORT = 42069
 
-func testHandler(w io.Writer, r *request.Request) *handler.HandlerError {
+func testHandler(w *response.Writer, r *request.Request) *handler.HandlerError {
 	path := r.RequestLine.RequestTarget
+	w.Headers["Content-Type"] = "text/html"
 	if path == "/yourproblem" {
+		html :=
+			`
+<html>
+	<head>
+	    <title>400 Bad Request</title>
+	</head>
+  <body>
+    <h1>Bad Request</h1>
+    <p>Your request honestly kinda sucked.</p>
+  </body>
+</html>
+`
 		return &handler.HandlerError{
 			StatusCode: 400,
-			Message:    "Your problem is not my problem\n",
+			Message:    html,
 		}
 	} else if path == "/myproblem" {
+		html :=
+			`
+<html>
+  <head>
+    <title>500 Internal Server Error</title>
+  </head>
+  <body>
+    <h1>Internal Server Error</h1>
+    <p>Okay, you know what? This one is on me.</p>
+  </body>
+</html>
+`
 		return &handler.HandlerError{
 			StatusCode: 500,
-			Message:    "Oops, my bad\n",
+			Message:    html,
 		}
 	}
-	w.Write([]byte("All good\n"))
+	html :=
+		`
+<html>
+  <head>
+    <title>200 OK</title>
+  </head>
+  <body>
+    <h1>Success!</h1>
+    <p>Your request was an absolute banger.</p>
+  </body>
+</html>
+`
+	w.Writer.Write([]byte(html))
 	return nil
 }
 func main() {
